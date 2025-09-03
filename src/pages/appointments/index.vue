@@ -61,11 +61,6 @@ import { useRoute, useRouter } from "vue-router";
 import type { State } from "../../store";
 import { AgentService } from "../../infrastructure/services/AgentService";
 import { ContactService } from "../../infrastructure/services/ContactService";
-import AppointmentList from "../../components/appointments/AppointmentList.vue";
-import AppointmentFilters from "../../components/appointments/AppointmentFilters.vue";
-import AppointmentPagination from "../../components/appointments/AppointmentPagination.vue";
-import CreateAppointmentModal from "../../components/appointments/CreateAppointmentModal.vue";
-import EditAppointmentModal from "../../components/appointments/EditAppointmentModal.vue";
 import type { Appointment } from "../../domain/models/Appointment";
 
 const store = useStore<State>();
@@ -128,7 +123,7 @@ const dateRangeFilter = computed({
         ...route.query,
         startDate: value.start?.toISOString().split("T")[0] || undefined,
         endDate: value.end?.toISOString().split("T")[0] || undefined,
-        page: undefined, // Reset page when filter changes
+        page: undefined,
       },
     });
   },
@@ -141,7 +136,7 @@ const searchFilter = computed({
       query: {
         ...route.query,
         search: value || undefined,
-        page: undefined, // Reset page when filter changes
+        page: undefined,
       },
     });
   },
@@ -159,7 +154,7 @@ const selectedAgentsFilter = computed({
       query: {
         ...route.query,
         agents: value.length > 0 ? value : undefined,
-        page: undefined, // Reset page when filter changes
+        page: undefined,
       },
     });
   },
@@ -248,15 +243,6 @@ const showSnackbar = (message: string, color: string) => {
 };
 
 const fetchFilteredData = async () => {
-  console.log("Fetching filtered data with:", {
-    page: currentPage.value,
-    status: statusFilter.value,
-    startDate: dateRangeFilter.value.start,
-    endDate: dateRangeFilter.value.end,
-    searchQuery: searchFilter.value,
-    agentIds: selectedAgentsFilter.value,
-  });
-
   await store.dispatch("fetchPaginatedAppointments", {
     page: currentPage.value,
     status: statusFilter.value,

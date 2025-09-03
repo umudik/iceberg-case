@@ -5,16 +5,11 @@ import { createAgent } from "@/domain/models/Agent";
 export async function createSampleData() {
     const service = new AirtableSDKService();
 
-    // Check if we already have data
     const existingContacts = await service.getContacts();
     if (existingContacts.length > 0) {
-        console.log("Sample data already exists");
         return;
     }
 
-    console.log("Creating sample data in Airtable...");
-
-    // Sample contacts
     const sampleContacts = [
         {
             firstName: "John",
@@ -36,11 +31,8 @@ export async function createSampleData() {
         },
     ];
 
-    // Sample agents (already have 5)
     const agents = await service.getAgents();
-    console.log(`Found ${agents.length} agents`);
 
-    // Create sample appointments
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -71,19 +63,13 @@ export async function createSampleData() {
         },
     ];
 
-    // Create appointments
     for (const appointment of sampleAppointments) {
         try {
             const created = await service.createAppointment(appointment);
             if (created) {
-                console.log(
-                    `Created appointment for ${appointment.contact?.firstName}`,
-                );
             }
         } catch (error) {
             console.error("Error creating appointment:", error);
         }
     }
-
-    console.log("Sample data creation completed!");
 }

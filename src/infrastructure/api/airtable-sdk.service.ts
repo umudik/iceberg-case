@@ -60,7 +60,7 @@ export class AirtableSDKService {
                     });
                     fetchNextPage();
                 });
-            console.log(`Fetched ${records.length} contacts`);
+
             return records;
         } catch (error: any) {
             console.error("Error fetching contacts:", error.message);
@@ -91,7 +91,7 @@ export class AirtableSDKService {
                     });
                     fetchNextPage();
                 });
-            console.log(`Fetched ${records.length} agents`);
+
             return records;
         } catch (error: any) {
             console.error("Error fetching agents:", error.message);
@@ -115,11 +115,6 @@ export class AirtableSDKService {
         hasMore: boolean;
         totalCount: number;
     }> {
-        console.log(
-            "🔍 AirtableSDKService.getAppointments called with:",
-            options,
-        );
-
         if (!this.base) {
             console.error("❌ Airtable base not initialized!");
             return {
@@ -132,14 +127,10 @@ export class AirtableSDKService {
         }
 
         try {
-            console.log("📞 Fetching contacts and agents...");
             const [contacts, agents] = await Promise.all([
                 this.getContacts(),
                 this.getAgents(),
             ]);
-            console.log(
-                `✅ Fetched ${contacts.length} contacts, ${agents.length} agents`,
-            );
 
             const appointments: Appointment[] = [];
             const pageSize = options?.pageSize || 10;
@@ -149,9 +140,7 @@ export class AirtableSDKService {
 
             if (options?.status && options.status !== "all") {
                 filters.push(`{status} = '${options.status}'`);
-                console.log(`🔍 Added status filter: ${options.status}`);
             } else {
-                console.log(`🔍 No status filter (status: ${options?.status})`);
             }
 
             if (options?.startDate) {
@@ -169,15 +158,12 @@ export class AirtableSDKService {
                 ? `AND(${filters.join(", ")})`
                 : "";
 
-            console.log("🔧 Filter formula:", filterFormula || "No filters");
-
             const sort = options?.sort ||
                 [{ field: "date", direction: "desc" as const }];
 
             let totalFilteredRecords = 0;
             const allRecords: any[] = [];
 
-            console.log("📋 Fetching appointments from Airtable...");
             await this.base(API_CONFIG.AIRTABLE_APPOINTMENTS_TABLE)
                 .select({
                     ...(filterFormula && { filterByFormula: filterFormula }),
@@ -185,9 +171,6 @@ export class AirtableSDKService {
                     pageSize: 100, // Get records in batches
                 })
                 .eachPage((records, fetchNextPage) => {
-                    console.log(
-                        `📄 Fetched page with ${records.length} records`,
-                    );
                     allRecords.push(...records);
                     totalFilteredRecords = allRecords.length;
 
@@ -199,18 +182,7 @@ export class AirtableSDKService {
             const endIndex = startIndex + pageSize;
             const pageRecords = allRecords.slice(startIndex, endIndex);
 
-            console.log(
-                `📊 Filtered records: ${totalFilteredRecords}, Page ${currentPage}/${totalPages}`,
-            );
-            console.log(
-                `📋 Processing ${pageRecords.length} records for current page`,
-            );
-
             pageRecords.forEach((record, index) => {
-                console.log(
-                    `🔄 Processing record ${index + 1}/${pageRecords.length}:`,
-                    record.id,
-                );
                 const contactIds = record.get("contact") as
                     | string[]
                     | undefined;
@@ -257,19 +229,8 @@ export class AirtableSDKService {
                     ),
                 });
 
-                console.log(
-                    `✅ Created appointment:`,
-                    appointment.id,
-                    appointment.contact.fullName,
-                    `Status: ${appointment.status}`,
-                    `Date: ${appointment.appointmentDate}`,
-                );
                 appointments.push(appointment);
             });
-
-            console.log(
-                `Fetched ${appointments.length} of ${totalFilteredRecords} filtered appointments (page ${currentPage} of ${totalPages})`,
-            );
 
             const hasMore = currentPage < totalPages;
 

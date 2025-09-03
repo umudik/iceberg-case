@@ -202,11 +202,7 @@ const store: Store<State> = createStore<State>({
                     agentService.getAll(),
                     contactService.getAll(),
                 ]);
-                console.log("Store - Data fetched:", {
-                    appointments: appointments.length,
-                    agents: agents.length,
-                    contacts: contacts.length,
-                });
+
                 commit("SET_APPOINTMENTS", appointments);
                 commit("SET_AGENTS", agents);
                 commit("SET_CONTACTS", contacts);
@@ -228,22 +224,13 @@ const store: Store<State> = createStore<State>({
                 agentIds?: string[];
             },
         ) {
-            console.log(
-                "🏪 Store.fetchPaginatedAppointments called with:",
-                filters,
-            );
             commit("SET_LOADING", true);
             try {
-                console.log("🔄 Fetching agents and contacts...");
                 const [agents, contacts] = await Promise.all([
                     agentService.getAll(),
                     contactService.getAll(),
                 ]);
-                console.log(
-                    `✅ Store: Fetched ${agents.length} agents, ${contacts.length} contacts`,
-                );
 
-                console.log("🔄 Calling appointmentService.getPaginated...");
                 const result = await appointmentService.getPaginated({
                     page: 1,
                     pageSize: 1000,
@@ -251,27 +238,11 @@ const store: Store<State> = createStore<State>({
                     startDate: filters.startDate || undefined,
                     endDate: filters.endDate || undefined,
                 });
-                console.log(
-                    "✅ Store: Got result from appointmentService:",
-                    result,
-                );
 
-                console.log(
-                    `📝 Committing ${result.appointments.length} appointments to store`,
-                );
                 commit("SET_APPOINTMENTS", result.appointments);
                 commit("SET_AGENTS", agents);
                 commit("SET_CONTACTS", contacts);
                 commit("SET_CURRENT_PAGE", filters.page || 1);
-
-                console.log(
-                    "Store - All data fetched for frontend filtering:",
-                    {
-                        appointments: result.appointments.length,
-                        agents: agents.length,
-                        contacts: contacts.length,
-                    },
-                );
 
                 return result;
             } catch (error) {
