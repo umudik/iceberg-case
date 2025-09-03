@@ -93,29 +93,7 @@
                 </v-col>
 
                 <v-col cols="12" md="3" class="pa-2">
-                  <v-sheet
-                    color="pink-lighten-5"
-                    rounded="lg"
-                    class="pa-2 d-inline-flex align-center ga-2"
-                  >
-                    <v-chip
-                      :color="getStatusColor(appointment)"
-                      size="small"
-                      variant="outlined"
-                      class="flex-shrink-0"
-                    >
-                      {{ getStatusLabel(appointment) }}
-                    </v-chip>
-                    <div class="d-flex align-center flex-shrink-0">
-                      <v-icon size="x-small" class="mr-1" color="pink-darken-4"
-                        >mdi-clock-outline</v-icon
-                      >
-                      <span
-                        class="text-caption text-pink-darken-4 text-nowrap"
-                        >{{ formatDate(appointment.appointmentDate) }}</span
-                      >
-                    </div>
-                  </v-sheet>
+                  <AppointmentStatusCard :appointment="appointment" />
                 </v-col>
 
                 <v-col
@@ -181,10 +159,8 @@
 </template>
 
 <script setup lang="ts">
-import { format } from "date-fns";
 import type { Appointment } from "../../domain/models/Appointment";
 import type { Agent } from "../../domain/models/Agent";
-import { AppointmentUseCases } from "../../domain/use-cases/AppointmentUseCases";
 import {
   generateColorFromString,
   getInitials,
@@ -207,18 +183,6 @@ const emit = defineEmits<{
   "create-appointment": [];
   "edit-appointment": [appointment: Appointment];
 }>();
-
-const formatDate = (date: Date): string => {
-  return format(new Date(date), "dd/MM/yyyy HH:mm");
-};
-
-const getStatusLabel = (appointment: Appointment): string => {
-  return AppointmentUseCases.getStatusLabel(appointment);
-};
-
-const getStatusColor = (appointment: Appointment): string => {
-  return AppointmentUseCases.getStatusColor(appointment);
-};
 
 const getContactColor = (name: string): string => {
   return generateColorFromString(name);

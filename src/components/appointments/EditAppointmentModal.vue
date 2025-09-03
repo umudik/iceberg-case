@@ -147,32 +147,10 @@
                           </div>
                         </v-col>
                         <v-col cols="12">
-                          <v-sheet
-                            color="pink-lighten-5"
-                            rounded="lg"
-                            class="pa-2 d-inline-flex align-center ga-2"
-                          >
-                            <v-chip
-                              :color="getStatusColor(related)"
-                              size="small"
-                              variant="outlined"
-                              class="flex-shrink-0"
-                            >
-                              {{ getStatusLabel(related) }}
-                            </v-chip>
-                            <div class="d-flex align-center flex-shrink-0">
-                              <v-icon
-                                size="x-small"
-                                class="mr-1"
-                                color="pink-darken-4"
-                                >mdi-clock-outline</v-icon
-                              >
-                              <span
-                                class="text-caption text-pink-darken-4 text-nowrap"
-                                >{{ formatDate(related.appointmentDate) }}</span
-                              >
-                            </div>
-                          </v-sheet>
+                          <AppointmentStatusCard
+                            :appointment="related"
+                            date-format="MMM dd, yyyy HH:mm"
+                          />
                         </v-col>
                       </v-row>
                     </v-col>
@@ -234,7 +212,6 @@ import { format } from "date-fns";
 import type { Contact } from "../../domain/models/Contact";
 import type { Agent } from "../../domain/models/Agent";
 import type { Appointment } from "../../domain/models/Appointment";
-import { AppointmentUseCases } from "../../domain/use-cases/AppointmentUseCases";
 
 interface Props {
   modelValue: boolean;
@@ -283,50 +260,6 @@ const statusOptions = computed(() => {
 const rules = {
   required: (v: any) => !!v || "This field is required",
   requiredArray: (v: any[]) => v.length > 0 || "At least one agent is required",
-};
-
-const formatDate = (date: Date): string => {
-  return format(new Date(date), "MMM dd, yyyy HH:mm");
-};
-
-const formatRelativeDate = (date: Date): string => {
-  const now = new Date();
-  const appointmentDate = new Date(date);
-  const diffTime = Math.abs(appointmentDate.getTime() - now.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (appointmentDate < now) {
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  } else {
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Tomorrow";
-    if (diffDays < 7) return `In ${diffDays} days`;
-    if (diffDays < 30) return `In ${Math.floor(diffDays / 7)} weeks`;
-    return `In ${Math.floor(diffDays / 30)} months`;
-  }
-};
-
-const getStatusLabel = (appointment: Appointment): string => {
-  const status = AppointmentUseCases.getStatus(appointment);
-  return status.charAt(0).toUpperCase() + status.slice(1);
-};
-
-const getStatusColor = (appointment: Appointment): string => {
-  const status = AppointmentUseCases.getStatus(appointment);
-  switch (status) {
-    case "upcoming":
-      return "success";
-    case "completed":
-      return "info";
-    case "cancelled":
-      return "error";
-    default:
-      return "grey";
-  }
 };
 
 const close = () => {

@@ -54,7 +54,7 @@ const store: Store<State> = createStore<State>({
         itemsPerPage: 12,
         totalPages: 0,
         totalCount: 0,
-        loading: false,
+        loading: true,
         error: null,
     }),
 

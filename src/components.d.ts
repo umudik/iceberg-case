@@ -12,6 +12,7 @@ declare module 'vue' {
     AppointmentFilters: typeof import('./components/appointments/AppointmentFilters.vue')['default']
     AppointmentList: typeof import('./components/appointments/AppointmentList.vue')['default']
     AppointmentPagination: typeof import('./components/appointments/AppointmentPagination.vue')['default']
+    AppointmentStatusCard: typeof import('./components/appointments/AppointmentStatusCard.vue')['default']
     CreateAppointmentModal: typeof import('./components/appointments/CreateAppointmentModal.vue')['default']
     EditAppointmentModal: typeof import('./components/appointments/EditAppointmentModal.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
