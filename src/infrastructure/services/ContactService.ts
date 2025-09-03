@@ -1,4 +1,4 @@
-import { IContactService } from "../../application/services/IContactService";
+import { IContactService } from "../../domain/services/IContactService";
 import type { Contact } from "../../domain/models/Contact";
 import { AirtableSDKService } from "../api/airtable-sdk.service";
 

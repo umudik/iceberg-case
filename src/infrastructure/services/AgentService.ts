@@ -1,4 +1,4 @@
-import { IAgentService } from "../../application/services/IAgentService";
+import { IAgentService } from "../../domain/services/IAgentService";
 import type { Agent } from "../../domain/models/Agent";
 import { AirtableSDKService } from "../api/airtable-sdk.service";
 

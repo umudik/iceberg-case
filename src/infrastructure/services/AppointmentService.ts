@@ -1,4 +1,4 @@
-import { IAppointmentService } from "../../application/services/IAppointmentService";
+import { IAppointmentService } from "../../domain/services/IAppointmentService";
 import type { Appointment } from "../../domain/models/Appointment";
 import type { DateRange } from "../../domain/value-objects/DateRange";
 import { AirtableSDKService } from "../api/airtable-sdk.service";

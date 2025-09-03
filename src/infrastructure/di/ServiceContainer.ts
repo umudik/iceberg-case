@@ -1,6 +1,6 @@
-import { IAppointmentService } from "../../application/services/IAppointmentService";
-import { IAgentService } from "../../application/services/IAgentService";
-import { IContactService } from "../../application/services/IContactService";
+import { IAppointmentService } from "../../domain/services/IAppointmentService";
+import { IAgentService } from "../../domain/services/IAgentService";
+import { IContactService } from "../../domain/services/IContactService";
 import { AppointmentService } from "../services/AppointmentService";
 import { AgentService } from "../services/AgentService";
 import { ContactService } from "../services/ContactService";
