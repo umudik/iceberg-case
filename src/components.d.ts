@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AirtableDebug: typeof import('./components/AirtableDebug.vue')['default']
     AppointmentFilters: typeof import('./components/appointments/AppointmentFilters.vue')['default']
     AppointmentList: typeof import('./components/appointments/AppointmentList.vue')['default']
     AppointmentPagination: typeof import('./components/appointments/AppointmentPagination.vue')['default']

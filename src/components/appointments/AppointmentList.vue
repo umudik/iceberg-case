@@ -15,7 +15,7 @@
           class="text-none"
           rounded="lg"
           elevation="2"
-          @click="$emit('create-appointment')"
+          @click="handleCreateClick"
         >
           <v-icon start size="small">mdi-plus</v-icon>
           Create Appointment
@@ -23,11 +23,23 @@
       </v-card-title>
 
       <v-card-text class="pa-0">
-        <div v-if="appointments.length > 0" class="pa-3 bg-grey-lighten-5">
+        <!-- Loading State -->
+        <div v-if="loading" class="pa-8 text-center">
+          <v-progress-circular
+            indeterminate
+            color="primary"
+            size="48"
+            class="mb-4"
+          ></v-progress-circular>
+          <div class="text-body-1 text-grey">Loading appointments...</div>
+        </div>
+
+        <!-- Appointment List -->
+        <div v-else-if="appointments.length > 0" class="pa-3 bg-grey-lighten-5">
           <v-card
             v-for="appointment in appointments"
             :key="appointment.id"
-            @click="$emit('edit-appointment', appointment)"
+            @click="handleEditClick(appointment)"
             class="mb-3"
             hover
             elevation="1"
@@ -84,22 +96,24 @@
                   <v-sheet
                     color="pink-lighten-5"
                     rounded="lg"
-                    class="pa-2 d-flex align-center ga-2"
+                    class="pa-2 d-inline-flex align-center ga-2"
                   >
                     <v-chip
                       :color="getStatusColor(appointment)"
                       size="small"
                       variant="outlined"
+                      class="flex-shrink-0"
                     >
                       {{ getStatusLabel(appointment) }}
                     </v-chip>
-                    <div class="d-flex align-center">
+                    <div class="d-flex align-center flex-shrink-0">
                       <v-icon size="x-small" class="mr-1" color="pink-darken-4"
                         >mdi-clock-outline</v-icon
                       >
-                      <span class="text-caption text-pink-darken-4">{{
-                        formatDate(appointment.appointmentDate)
-                      }}</span>
+                      <span
+                        class="text-caption text-pink-darken-4 text-nowrap"
+                        >{{ formatDate(appointment.appointmentDate) }}</span
+                      >
                     </div>
                   </v-sheet>
                 </v-col>
@@ -170,19 +184,26 @@
 import { format } from "date-fns";
 import type { Appointment } from "../../domain/models/Appointment";
 import type { Agent } from "../../domain/models/Agent";
-import { getAppointmentStatus } from "../../domain/models/Appointment";
-import { generateColorFromString, getInitials } from "../../utils/colorUtils";
+import { AppointmentUseCases } from "../../domain/use-cases/AppointmentUseCases";
+import {
+  generateColorFromString,
+  getInitials,
+} from "../../presentation/utils/colorUtils";
 
 interface Props {
   appointments: Appointment[];
   totalCount?: number;
+  loading?: boolean;
+  onCreateClick?: () => void;
+  onEditClick?: (appointment: Appointment) => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   totalCount: 0,
+  loading: false,
 });
 
-defineEmits<{
+const emit = defineEmits<{
   "create-appointment": [];
   "edit-appointment": [appointment: Appointment];
 }>();
@@ -192,52 +213,11 @@ const formatDate = (date: Date): string => {
 };
 
 const getStatusLabel = (appointment: Appointment): string => {
-  const status = getAppointmentStatus(appointment);
-
-  if (status === "upcoming") {
-    const now = new Date();
-    const appointmentDate = new Date(appointment.appointmentDate);
-    const diffTime = appointmentDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      return "Upcoming Today";
-    } else if (diffDays === 1) {
-      return "Upcoming Tomorrow";
-    } else if (diffDays > 0) {
-      return `Upcoming ${diffDays} days`;
-    }
-  }
-
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  return AppointmentUseCases.getStatusLabel(appointment);
 };
 
 const getStatusColor = (appointment: Appointment): string => {
-  const status = getAppointmentStatus(appointment);
-  switch (status) {
-    case "upcoming":
-      return "green";
-    case "completed":
-      return "grey";
-    case "cancelled":
-      return "pink";
-    default:
-      return "grey";
-  }
-};
-
-const getStatusIcon = (appointment: Appointment): string => {
-  const status = getAppointmentStatus(appointment);
-  switch (status) {
-    case "upcoming":
-      return "mdi-clock-outline";
-    case "completed":
-      return "mdi-check-circle-outline";
-    case "cancelled":
-      return "mdi-close-circle-outline";
-    default:
-      return "mdi-help-circle-outline";
-  }
+  return AppointmentUseCases.getStatusColor(appointment);
 };
 
 const getContactColor = (name: string): string => {
@@ -248,5 +228,21 @@ const getAgentColor = (agent: Agent): string => {
   return agent.themeColor && agent.themeColor !== "#000000"
     ? agent.themeColor
     : generateColorFromString(agent.name);
+};
+
+const handleCreateClick = () => {
+  if (props.onCreateClick) {
+    props.onCreateClick();
+  } else {
+    emit("create-appointment");
+  }
+};
+
+const handleEditClick = (appointment: Appointment) => {
+  if (props.onEditClick) {
+    props.onEditClick(appointment);
+  } else {
+    emit("edit-appointment", appointment);
+  }
 };
 </script>

@@ -1,67 +1,83 @@
-import { IAppointmentService } from "../../domain/services/IAppointmentService";
+import { IAppointmentService } from "../../application/services/IAppointmentService";
 import type { Appointment } from "../../domain/models/Appointment";
-import { createAppointment } from "../../domain/models/Appointment";
-import { MockService } from "../api/mock.service";
-import { MockServiceSingleton } from "../api/MockServiceSingleton";
+import type { DateRange } from "../../domain/value-objects/DateRange";
+import { AirtableSDKService } from "../api/airtable-sdk.service";
 
 export class AppointmentService extends IAppointmentService {
-    private mockService: MockService;
+    private airtableService: AirtableSDKService;
 
     constructor() {
         super();
-        this.mockService = MockServiceSingleton.getInstance();
+        this.airtableService = new AirtableSDKService();
     }
 
     async getAll(): Promise<Appointment[]> {
-        return this.mockService.getAppointments();
+        return this.airtableService.getAllAppointments();
+    }
+
+    async getPaginated(options?: {
+        pageSize?: number;
+        page?: number;
+        status?: string;
+        startDate?: Date;
+        endDate?: Date;
+        searchQuery?: string;
+        agentIds?: string[];
+        sort?: { field: string; direction: "asc" | "desc" }[];
+    }) {
+        return this.airtableService.getAppointments(options);
     }
 
     async getById(id: string): Promise<Appointment | null> {
-        const appointments = await this.mockService.getAppointments();
+        const appointments = await this.airtableService.getAllAppointments();
         const appointment = appointments.find((a) => a.id === id);
-        return Promise.resolve(appointment || null);
+        return appointment || null;
     }
 
-    async create(
-        appointment: Partial<Appointment>,
-    ): Promise<Appointment | null> {
-        return this.mockService.createAppointment(appointment);
+    async create(appointment: Partial<Appointment>): Promise<Appointment> {
+        const result = await this.airtableService.createAppointment(
+            appointment,
+        );
+        if (!result) {
+            throw new Error("Failed to create appointment");
+        }
+        return result;
     }
 
     async update(
         id: string,
         appointment: Partial<Appointment>,
-    ): Promise<Appointment | null> {
-        return this.mockService.updateAppointment(id, appointment);
+    ): Promise<Appointment> {
+        const result = await this.airtableService.updateAppointment(
+            id,
+            appointment,
+        );
+        if (!result) {
+            throw new Error("Failed to update appointment");
+        }
+        return result;
     }
 
     async delete(id: string): Promise<boolean> {
-        // MockService doesn't have delete, so we'll return false for now
-        return Promise.resolve(false);
+        return false;
     }
 
     async getByContactId(contactId: string): Promise<Appointment[]> {
-        return this.mockService.getRelatedAppointments(contactId);
+        const appointments = await this.airtableService.getAllAppointments();
+        return appointments.filter((a) => a.contact?.id === contactId);
     }
 
     async getByAgentId(agentId: string): Promise<Appointment[]> {
-        const appointments = await this.mockService.getAppointments();
-        return Promise.resolve(
-            appointments.filter((a) =>
-                a.agents.some((agent) => agent.id === agentId)
-            ),
+        const appointments = await this.airtableService.getAllAppointments();
+        return appointments.filter((a) =>
+            a.agents.some((agent) => agent.id === agentId)
         );
     }
 
-    async getByDateRange(
-        startDate: Date,
-        endDate: Date,
-    ): Promise<Appointment[]> {
-        const appointments = await this.mockService.getAppointments();
-        return Promise.resolve(
-            appointments.filter((a) =>
-                a.appointmentDate >= startDate && a.appointmentDate <= endDate
-            ),
+    async getByDateRange(dateRange: DateRange): Promise<Appointment[]> {
+        const appointments = await this.airtableService.getAllAppointments();
+        return appointments.filter((a) =>
+            dateRange.contains(a.appointmentDate)
         );
     }
 }

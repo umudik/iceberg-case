@@ -1,38 +1,34 @@
-import { IAgentService } from "../../domain/services/IAgentService";
+import { IAgentService } from "../../application/services/IAgentService";
 import type { Agent } from "../../domain/models/Agent";
-import { createAgent } from "../../domain/models/Agent";
-import { MockServiceSingleton } from "../api/MockServiceSingleton";
+import { AirtableSDKService } from "../api/airtable-sdk.service";
 
 export class AgentService extends IAgentService {
-    private mockService;
+    private airtableService: AirtableSDKService;
 
     constructor() {
         super();
-        this.mockService = MockServiceSingleton.getInstance();
+        this.airtableService = new AirtableSDKService();
     }
 
     async getAll(): Promise<Agent[]> {
-        return this.mockService.getAgents();
+        return this.airtableService.getAgents();
     }
 
     async getById(id: string): Promise<Agent | null> {
-        const agents = await this.mockService.getAgents();
+        const agents = await this.airtableService.getAgents();
         const agent = agents.find((a) => a.id === id);
-        return Promise.resolve(agent || null);
+        return agent || null;
     }
 
-    async create(agent: Partial<Agent>): Promise<Agent | null> {
-        // Not implemented for mock service
-        return Promise.resolve(null);
+    async create(agent: Partial<Agent>): Promise<Agent> {
+        throw new Error("Not implemented");
     }
 
-    async update(id: string, agent: Partial<Agent>): Promise<Agent | null> {
-        // Not implemented for mock service
-        return Promise.resolve(null);
+    async update(id: string, agent: Partial<Agent>): Promise<Agent> {
+        throw new Error("Not implemented");
     }
 
     async delete(id: string): Promise<boolean> {
-        // Not implemented for mock service
-        return Promise.resolve(false);
+        return false;
     }
 }

@@ -12,6 +12,17 @@ const api = axios.create({
     headers: getAirtableHeaders(),
 });
 
+console.log("Airtable Configuration:", {
+    baseURL: `${API_CONFIG.AIRTABLE_BASE_URL}/${API_CONFIG.AIRTABLE_BASE_ID}`,
+    hasApiKey: !!API_CONFIG.AIRTABLE_API_KEY,
+    apiKeyLength: API_CONFIG.AIRTABLE_API_KEY?.length,
+    tables: {
+        appointments: API_CONFIG.AIRTABLE_APPOINTMENTS_TABLE,
+        agents: API_CONFIG.AIRTABLE_AGENTS_TABLE,
+        contacts: API_CONFIG.AIRTABLE_CONTACTS_TABLE,
+    },
+});
+
 export class AirtableService {
     async getContacts(): Promise<Contact[]> {
         try {
@@ -55,6 +66,10 @@ export class AirtableService {
 
     async getAppointments(): Promise<Appointment[]> {
         try {
+            console.log(
+                "Fetching appointments from:",
+                `/${API_CONFIG.AIRTABLE_APPOINTMENTS_TABLE}`,
+            );
             const response = await api.get(
                 `/${API_CONFIG.AIRTABLE_APPOINTMENTS_TABLE}`,
             );
@@ -79,8 +94,18 @@ export class AirtableService {
                     ),
                 });
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching appointments:", error);
+            if (error.response) {
+                console.error("Response status:", error.response.status);
+                console.error("Response data:", error.response.data);
+                if (error.response.status === 403) {
+                    console.error("403 Forbidden - Check your API key!");
+                    console.error(
+                        "Make sure you have a valid API key in your .env file",
+                    );
+                }
+            }
             return [];
         }
     }

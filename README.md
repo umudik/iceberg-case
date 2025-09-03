@@ -1,14 +1,44 @@
-# Vuetify (Default)
+# Appointment Management System
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+A modern appointment management system built with Vue 3, Vuetify, and Airtable SDK. This application provides a comprehensive interface for managing appointments, agents, and contacts with real-time data synchronization through Airtable's official JavaScript SDK.
 
-## ❗️ Important Links
+## 🔧 Airtable Configuration
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
+This application uses Airtable as the data source. To configure:
+
+1. **Create a `.env` file** by copying the example:
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Update the `.env` file** with your Airtable credentials:
+   - `VITE_AIRTABLE_API_KEY`: Your Airtable API key (get it from [Airtable Account](https://airtable.com/account))
+   - `VITE_AIRTABLE_BASE_ID`: Your Airtable base ID (find it in the Airtable API documentation for your base)
+   - `VITE_AIRTABLE_APPOINTMENTS_TABLE`: Name of your appointments table (default: "Appointments")
+   - `VITE_AIRTABLE_AGENTS_TABLE`: Name of your agents table (default: "Agents")
+   - `VITE_AIRTABLE_CONTACTS_TABLE`: Name of your contacts table (default: "Contacts")
+
+### Required Airtable Table Structure
+
+**Contacts Table:**
+- `firstName` (Single line text)
+- `lastName` (Single line text)
+- `email` (Email)
+- `phone` (Phone number)
+
+**Agents Table:**
+- `name` (Single line text)
+- `email` (Email)
+- `phone` (Phone number)
+- `themeColor` (Single line text - hex color code)
+
+**Appointments Table:**
+- `contactId` (Link to Contacts table)
+- `address` (Single line text)
+- `agentIds` (Link to Agents table - allow multiple)
+- `appointmentDate` (Date and time)
+- `status` (Single select: upcoming, completed, cancelled)
+- `updatedAt` (Date and time - optional)
 
 ## 💿 Install
 

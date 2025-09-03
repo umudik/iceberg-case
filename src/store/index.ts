@@ -5,13 +5,13 @@ import type {
     Appointment,
     AppointmentStatus,
 } from "../domain/models/Appointment";
-import { ServiceProvider } from "../infrastructure/services/ServiceProvider";
-import { getAppointmentStatus } from "../domain/models/Appointment";
+import { ServiceContainer } from "../infrastructure/di/ServiceContainer";
+import { AppointmentUseCases } from "../domain/use-cases/AppointmentUseCases";
 
-const serviceProvider = ServiceProvider.getInstance();
-const contactService = serviceProvider.getContactService();
-const agentService = serviceProvider.getAgentService();
-const appointmentService = serviceProvider.getAppointmentService();
+const container = ServiceContainer.getInstance();
+const contactService = container.getContactService();
+const agentService = container.getAgentService();
+const appointmentService = container.getAppointmentService();
 
 export interface FilterState {
     status: "all" | AppointmentStatus;
@@ -30,6 +30,8 @@ export interface State {
     filters: FilterState;
     currentPage: number;
     itemsPerPage: number;
+    totalPages?: number;
+    totalCount?: number;
     loading: boolean;
     error: string | null;
 }
@@ -50,6 +52,8 @@ const store: Store<State> = createStore<State>({
         },
         currentPage: 1,
         itemsPerPage: 12,
+        totalPages: 0,
+        totalCount: 0,
         loading: false,
         error: null,
     }),
@@ -58,69 +62,51 @@ const store: Store<State> = createStore<State>({
         filteredAppointments: (state: State): Appointment[] => {
             let filtered = [...state.appointments];
 
-            if (state.filters.status !== "all") {
-                filtered = filtered.filter((appointment) => {
-                    const actualStatus = getAppointmentStatus(appointment);
-                    return actualStatus === state.filters.status;
-                });
-            }
-
             if (state.filters.selectedAgents.length > 0) {
                 filtered = filtered.filter((appointment) =>
-                    appointment.agents.some((agent: Agent) =>
+                    appointment.agents.some((agent) =>
                         state.filters.selectedAgents.includes(agent.id)
                     )
                 );
             }
 
             if (state.filters.searchQuery) {
-                const query = state.filters.searchQuery.toLowerCase();
-                filtered = filtered.filter((appointment) =>
-                    appointment.address.toLowerCase().includes(query) ||
-                    appointment.contact.fullName?.toLowerCase().includes(
-                        query,
-                    ) ||
-                    appointment.contact.email.toLowerCase().includes(query) ||
-                    appointment.contact.phone.includes(query)
-                );
-            }
-
-            if (state.filters.dateRange.start || state.filters.dateRange.end) {
+                const searchTerm = state.filters.searchQuery.toLowerCase();
                 filtered = filtered.filter((appointment) => {
-                    const appointmentDate = appointment.appointmentDate;
-                    if (
-                        state.filters.dateRange.start &&
-                        appointmentDate < state.filters.dateRange.start
-                    ) {
-                        return false;
-                    }
-                    if (
-                        state.filters.dateRange.end &&
-                        appointmentDate > state.filters.dateRange.end
-                    ) {
-                        return false;
-                    }
-                    return true;
+                    const address = appointment.address?.toLowerCase() || "";
+                    const contactName =
+                        `${appointment.contact.firstName} ${appointment.contact.lastName}`
+                            .toLowerCase();
+                    const contactEmail =
+                        appointment.contact.email?.toLowerCase() || "";
+                    const contactPhone =
+                        appointment.contact.phone?.toLowerCase() || "";
+
+                    return address.includes(searchTerm) ||
+                        contactName.includes(searchTerm) ||
+                        contactEmail.includes(searchTerm) ||
+                        contactPhone.includes(searchTerm);
                 });
             }
-
-            filtered.sort((a, b) =>
-                b.appointmentDate.getTime() - a.appointmentDate.getTime()
-            );
 
             return filtered;
         },
 
         paginatedAppointments: (state: State, getters: any): Appointment[] => {
-            const start = (state.currentPage - 1) * state.itemsPerPage;
-            const end = start + state.itemsPerPage;
-            return getters.filteredAppointments.slice(start, end);
+            const filtered = getters.filteredAppointments;
+            const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+            const endIndex = startIndex + state.itemsPerPage;
+            return filtered.slice(startIndex, endIndex);
         },
 
         totalPages: (state: State, getters: any): number => {
             return Math.ceil(
                 getters.filteredAppointments.length / state.itemsPerPage,
             );
+        },
+
+        totalCount: (state: State, getters: any): number => {
+            return getters.filteredAppointments.length;
         },
 
         getAppointmentsByContact:
@@ -177,6 +163,14 @@ const store: Store<State> = createStore<State>({
             state.currentPage = page;
         },
 
+        SET_TOTAL_PAGES(state: State, totalPages: number) {
+            state.totalPages = totalPages;
+        },
+
+        SET_TOTAL_COUNT(state: State, totalCount: number) {
+            state.totalCount = totalCount;
+        },
+
         SET_LOADING(state: State, loading: boolean) {
             state.loading = loading;
         },
@@ -208,10 +202,80 @@ const store: Store<State> = createStore<State>({
                     agentService.getAll(),
                     contactService.getAll(),
                 ]);
+                console.log("Store - Data fetched:", {
+                    appointments: appointments.length,
+                    agents: agents.length,
+                    contacts: contacts.length,
+                });
                 commit("SET_APPOINTMENTS", appointments);
                 commit("SET_AGENTS", agents);
                 commit("SET_CONTACTS", contacts);
             } catch (error) {
+                commit("SET_ERROR", "Failed to fetch data");
+            } finally {
+                commit("SET_LOADING", false);
+            }
+        },
+
+        async fetchPaginatedAppointments(
+            { commit, state }: ActionContext<State, State>,
+            filters: {
+                page?: number;
+                status?: string;
+                startDate?: Date | null;
+                endDate?: Date | null;
+                searchQuery?: string;
+                agentIds?: string[];
+            },
+        ) {
+            console.log(
+                "🏪 Store.fetchPaginatedAppointments called with:",
+                filters,
+            );
+            commit("SET_LOADING", true);
+            try {
+                console.log("🔄 Fetching agents and contacts...");
+                const [agents, contacts] = await Promise.all([
+                    agentService.getAll(),
+                    contactService.getAll(),
+                ]);
+                console.log(
+                    `✅ Store: Fetched ${agents.length} agents, ${contacts.length} contacts`,
+                );
+
+                console.log("🔄 Calling appointmentService.getPaginated...");
+                const result = await appointmentService.getPaginated({
+                    page: 1,
+                    pageSize: 1000,
+                    status: filters.status || "all",
+                    startDate: filters.startDate || undefined,
+                    endDate: filters.endDate || undefined,
+                });
+                console.log(
+                    "✅ Store: Got result from appointmentService:",
+                    result,
+                );
+
+                console.log(
+                    `📝 Committing ${result.appointments.length} appointments to store`,
+                );
+                commit("SET_APPOINTMENTS", result.appointments);
+                commit("SET_AGENTS", agents);
+                commit("SET_CONTACTS", contacts);
+                commit("SET_CURRENT_PAGE", filters.page || 1);
+
+                console.log(
+                    "Store - All data fetched for frontend filtering:",
+                    {
+                        appointments: result.appointments.length,
+                        agents: agents.length,
+                        contacts: contacts.length,
+                    },
+                );
+
+                return result;
+            } catch (error) {
+                console.error("Failed to fetch paginated data:", error);
                 commit("SET_ERROR", "Failed to fetch data");
             } finally {
                 commit("SET_LOADING", false);

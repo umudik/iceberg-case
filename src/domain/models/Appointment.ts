@@ -24,13 +24,3 @@ export const createAppointment = (data: Partial<Appointment>): Appointment => ({
     createdAt: data.createdAt || new Date(),
     updatedAt: data.updatedAt || new Date(),
 });
-
-export const getAppointmentStatus = (
-    appointment: Appointment,
-): AppointmentStatus => {
-    if (appointment.status === "cancelled") {
-        return "cancelled";
-    }
-    const now = new Date();
-    return appointment.appointmentDate < now ? "completed" : "upcoming";
-};

@@ -121,7 +121,10 @@
 import { ref, computed, watch } from "vue";
 import type { Agent } from "../../domain/models/Agent";
 import type { FilterState } from "../../store";
-import { generateColorFromString, getInitials } from "../../utils/colorUtils";
+import {
+  generateColorFromString,
+  getInitials,
+} from "../../presentation/utils/colorUtils";
 
 interface Props {
   filters: FilterState;
@@ -141,16 +144,13 @@ const localFilters = ref({ ...props.filters });
 const startDate = ref<string>("");
 const endDate = ref<string>("");
 
-// v-chip-group için seçili agent ID'lerini tutacak computed
 const selectedAgentIndices = computed({
   get: () => localFilters.value.selectedAgents,
   set: (value: string[]) => {
-    // Her değişiklikte emit et
     const currentAgents = localFilters.value.selectedAgents;
     const addedAgents = value.filter((id) => !currentAgents.includes(id));
     const removedAgents = currentAgents.filter((id) => !value.includes(id));
 
-    // Eklenen veya çıkarılan agentları toggle et
     addedAgents.forEach((id) => emit("toggle:agent", id));
     removedAgents.forEach((id) => emit("toggle:agent", id));
   },
@@ -178,7 +178,6 @@ const updateDateRange = () => {
 };
 
 const getAgentColor = (agent: Agent): string => {
-  // Use themeColor if available, otherwise generate from name
   return agent.themeColor && agent.themeColor !== "#000000"
     ? agent.themeColor
     : generateColorFromString(agent.name);

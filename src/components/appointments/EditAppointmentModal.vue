@@ -104,26 +104,112 @@
 
         <v-divider class="my-4" />
 
-        <div class="text-h6 mb-3">Related Appointments</div>
-        <v-list v-if="relatedAppointments.length > 0" density="compact">
-          <v-list-item
-            v-for="related in relatedAppointments"
-            :key="related.id"
-            class="px-0"
-          >
-            <v-list-item-title>
-              {{ formatDate(related.appointmentDate) }} - {{ related.address }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              <v-chip size="x-small" :color="getStatusColor(related)">
-                {{ getStatusLabel(related) }}
-              </v-chip>
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-        <v-alert v-else type="info" variant="tonal" density="compact">
-          No other appointments for this contact
-        </v-alert>
+        <div class="mb-4">
+          <div class="d-flex align-center mb-3">
+            <v-icon color="primary" class="mr-2">mdi-calendar-multiple</v-icon>
+            <span class="text-h6">Related Appointments</span>
+            <v-chip
+              v-if="relatedAppointments.length > 0"
+              size="small"
+              class="ml-2"
+              color="primary"
+              variant="tonal"
+            >
+              {{ relatedAppointments.length }}
+            </v-chip>
+          </div>
+
+          <v-row v-if="relatedAppointments.length > 0" class="mt-2">
+            <v-col
+              v-for="related in relatedAppointments"
+              :key="related.id"
+              cols="12"
+            >
+              <v-card
+                variant="outlined"
+                density="compact"
+                :color="
+                  related.status === 'completed'
+                    ? 'success'
+                    : related.status === 'cancelled'
+                    ? 'error'
+                    : 'primary'
+                "
+                class="related-appointment-card"
+              >
+                <v-card-text class="pa-3">
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <div class="d-flex align-center">
+                      <v-icon
+                        size="small"
+                        :color="getStatusColor(related)"
+                        class="mr-2"
+                      >
+                        {{
+                          related.status === "completed"
+                            ? "mdi-check-circle"
+                            : related.status === "cancelled"
+                            ? "mdi-cancel"
+                            : "mdi-clock-outline"
+                        }}
+                      </v-icon>
+                      <v-chip
+                        size="small"
+                        :color="getStatusColor(related)"
+                        variant="flat"
+                        label
+                      >
+                        {{ getStatusLabel(related) }}
+                      </v-chip>
+                    </div>
+                    <span class="text-caption text-medium-emphasis">
+                      {{ formatRelativeDate(related.appointmentDate) }}
+                    </span>
+                  </div>
+
+                  <div class="text-body-2 font-weight-medium mb-1">
+                    <v-icon size="x-small" class="mr-1">mdi-map-marker</v-icon>
+                    {{ related.address }}
+                  </div>
+
+                  <div class="text-caption text-medium-emphasis">
+                    <v-icon size="x-small" class="mr-1">mdi-calendar</v-icon>
+                    {{ formatDate(related.appointmentDate) }}
+                  </div>
+
+                  <div v-if="related.agents.length > 0" class="mt-2">
+                    <v-avatar
+                      v-for="agent in related.agents.slice(0, 2)"
+                      :key="agent.id"
+                      size="24"
+                      :color="agent.themeColor"
+                      class="mr-1"
+                    >
+                      <span class="text-caption">{{
+                        agent.name.charAt(0)
+                      }}</span>
+                    </v-avatar>
+                    <span
+                      v-if="related.agents.length > 2"
+                      class="text-caption ml-1"
+                    >
+                      +{{ related.agents.length - 2 }}
+                    </span>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <v-card v-else variant="tonal" color="info" density="compact">
+            <v-card-text class="d-flex align-center pa-3">
+              <v-icon class="mr-2">mdi-information</v-icon>
+              <span class="text-body-2"
+                >No other appointments for this contact</span
+              >
+            </v-card-text>
+          </v-card>
+        </div>
       </v-card-text>
 
       <v-card-actions>
@@ -143,7 +229,7 @@ import { format } from "date-fns";
 import type { Contact } from "../../domain/models/Contact";
 import type { Agent } from "../../domain/models/Agent";
 import type { Appointment } from "../../domain/models/Appointment";
-import { getAppointmentStatus } from "../../domain/models/Appointment";
+import { AppointmentUseCases } from "../../domain/use-cases/AppointmentUseCases";
 
 interface Props {
   modelValue: boolean;
@@ -198,13 +284,34 @@ const formatDate = (date: Date): string => {
   return format(new Date(date), "MMM dd, yyyy HH:mm");
 };
 
+const formatRelativeDate = (date: Date): string => {
+  const now = new Date();
+  const appointmentDate = new Date(date);
+  const diffTime = Math.abs(appointmentDate.getTime() - now.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (appointmentDate < now) {
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+  } else {
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    if (diffDays < 7) return `In ${diffDays} days`;
+    if (diffDays < 30) return `In ${Math.floor(diffDays / 7)} weeks`;
+    return `In ${Math.floor(diffDays / 30)} months`;
+  }
+};
+
 const getStatusLabel = (appointment: Appointment): string => {
-  const status = getAppointmentStatus(appointment);
+  const status = AppointmentUseCases.getStatus(appointment);
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 const getStatusColor = (appointment: Appointment): string => {
-  const status = getAppointmentStatus(appointment);
+  const status = AppointmentUseCases.getStatus(appointment);
   switch (status) {
     case "upcoming":
       return "success";
@@ -271,3 +378,15 @@ watch(
   { immediate: true }
 );
 </script>
+
+<style scoped>
+.related-appointment-card {
+  transition: all 0.2s ease;
+  border-left-width: 3px !important;
+}
+
+.related-appointment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+</style>
