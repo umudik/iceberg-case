@@ -128,74 +128,79 @@
               <v-card
                 variant="outlined"
                 density="compact"
-                :color="
-                  related.status === 'completed'
-                    ? 'success'
-                    : related.status === 'cancelled'
-                    ? 'error'
-                    : 'primary'
-                "
                 class="related-appointment-card"
               >
                 <v-card-text class="pa-3">
-                  <div class="d-flex align-center justify-space-between mb-2">
-                    <div class="d-flex align-center">
-                      <v-icon
-                        size="small"
-                        :color="getStatusColor(related)"
-                        class="mr-2"
+                  <v-row no-gutters>
+                    <v-col cols="8">
+                      <v-row no-gutters>
+                        <v-col cols="12" class="mb-2">
+                          <div class="d-flex align-center">
+                            <v-icon
+                              size="small"
+                              class="mr-2 text-medium-emphasis"
+                              >mdi-home-outline</v-icon
+                            >
+                            <span class="text-body-2 font-weight-medium">{{
+                              related.address
+                            }}</span>
+                          </div>
+                        </v-col>
+                        <v-col cols="12">
+                          <v-sheet
+                            color="pink-lighten-5"
+                            rounded="lg"
+                            class="pa-2 d-inline-flex align-center ga-2"
+                          >
+                            <v-chip
+                              :color="getStatusColor(related)"
+                              size="small"
+                              variant="outlined"
+                              class="flex-shrink-0"
+                            >
+                              {{ getStatusLabel(related) }}
+                            </v-chip>
+                            <div class="d-flex align-center flex-shrink-0">
+                              <v-icon
+                                size="x-small"
+                                class="mr-1"
+                                color="pink-darken-4"
+                                >mdi-clock-outline</v-icon
+                              >
+                              <span
+                                class="text-caption text-pink-darken-4 text-nowrap"
+                                >{{ formatDate(related.appointmentDate) }}</span
+                              >
+                            </div>
+                          </v-sheet>
+                        </v-col>
+                      </v-row>
+                    </v-col>
+                    <v-col cols="4" class="d-flex align-center justify-end">
+                      <div
+                        v-if="related.agents.length > 0"
+                        class="d-flex align-center"
                       >
-                        {{
-                          related.status === "completed"
-                            ? "mdi-check-circle"
-                            : related.status === "cancelled"
-                            ? "mdi-cancel"
-                            : "mdi-clock-outline"
-                        }}
-                      </v-icon>
-                      <v-chip
-                        size="small"
-                        :color="getStatusColor(related)"
-                        variant="flat"
-                        label
-                      >
-                        {{ getStatusLabel(related) }}
-                      </v-chip>
-                    </div>
-                    <span class="text-caption text-medium-emphasis">
-                      {{ formatRelativeDate(related.appointmentDate) }}
-                    </span>
-                  </div>
-
-                  <div class="text-body-2 font-weight-medium mb-1">
-                    <v-icon size="x-small" class="mr-1">mdi-map-marker</v-icon>
-                    {{ related.address }}
-                  </div>
-
-                  <div class="text-caption text-medium-emphasis">
-                    <v-icon size="x-small" class="mr-1">mdi-calendar</v-icon>
-                    {{ formatDate(related.appointmentDate) }}
-                  </div>
-
-                  <div v-if="related.agents.length > 0" class="mt-2">
-                    <v-avatar
-                      v-for="agent in related.agents.slice(0, 2)"
-                      :key="agent.id"
-                      size="24"
-                      :color="agent.themeColor"
-                      class="mr-1"
-                    >
-                      <span class="text-caption">{{
-                        agent.name.charAt(0)
-                      }}</span>
-                    </v-avatar>
-                    <span
-                      v-if="related.agents.length > 2"
-                      class="text-caption ml-1"
-                    >
-                      +{{ related.agents.length - 2 }}
-                    </span>
-                  </div>
+                        <v-avatar
+                          v-for="agent in related.agents.slice(0, 2)"
+                          :key="agent.id"
+                          size="28"
+                          :color="agent.themeColor"
+                          class="mr-1"
+                        >
+                          <span class="text-caption font-weight-bold">{{
+                            agent.name.charAt(0)
+                          }}</span>
+                        </v-avatar>
+                        <span
+                          v-if="related.agents.length > 2"
+                          class="text-caption text-medium-emphasis ml-1"
+                        >
+                          +{{ related.agents.length - 2 }}
+                        </span>
+                      </div>
+                    </v-col>
+                  </v-row>
                 </v-card-text>
               </v-card>
             </v-col>
