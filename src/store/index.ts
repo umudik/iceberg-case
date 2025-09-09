@@ -51,7 +51,7 @@ const store: Store<State> = createStore<State>({
             },
         },
         currentPage: 1,
-        itemsPerPage: 12,
+        itemsPerPage: 10,
         totalPages: 0,
         totalCount: 0,
         loading: true,
@@ -60,52 +60,28 @@ const store: Store<State> = createStore<State>({
 
     getters: {
         filteredAppointments: (state: State): Appointment[] => {
-            let filtered = [...state.appointments];
-
-            if (state.filters.selectedAgents.length > 0) {
-                filtered = filtered.filter((appointment) =>
-                    appointment.agents.some((agent) =>
-                        state.filters.selectedAgents.includes(agent.id)
-                    )
-                );
-            }
-
-            if (state.filters.searchQuery) {
-                const searchTerm = state.filters.searchQuery.toLowerCase();
-                filtered = filtered.filter((appointment) => {
-                    const address = appointment.address?.toLowerCase() || "";
-                    const contactName =
-                        `${appointment.contact.firstName} ${appointment.contact.lastName}`
-                            .toLowerCase();
-                    const contactEmail =
-                        appointment.contact.email?.toLowerCase() || "";
-                    const contactPhone =
-                        appointment.contact.phone?.toLowerCase() || "";
-
-                    return address.includes(searchTerm) ||
-                        contactName.includes(searchTerm) ||
-                        contactEmail.includes(searchTerm) ||
-                        contactPhone.includes(searchTerm);
-                });
-            }
-
-            return filtered;
+            return AppointmentUseCases.filterAppointments(state.appointments, {
+                status: state.filters.status,
+                selectedAgents: state.filters.selectedAgents,
+                searchQuery: state.filters.searchQuery,
+                dateRange: state.filters.dateRange
+            });
         },
 
-        paginatedAppointments: (state: State, getters: any): Appointment[] => {
+        paginatedAppointments: (state: State, getters: { filteredAppointments: Appointment[] }): Appointment[] => {
             const filtered = getters.filteredAppointments;
             const startIndex = (state.currentPage - 1) * state.itemsPerPage;
             const endIndex = startIndex + state.itemsPerPage;
             return filtered.slice(startIndex, endIndex);
         },
 
-        totalPages: (state: State, getters: any): number => {
+        totalPages: (state: State, getters: { filteredAppointments: Appointment[] }): number => {
             return Math.ceil(
                 getters.filteredAppointments.length / state.itemsPerPage,
             );
         },
 
-        totalCount: (state: State, getters: any): number => {
+        totalCount: (state: State, getters: { filteredAppointments: Appointment[] }): number => {
             return getters.filteredAppointments.length;
         },
 
@@ -226,25 +202,24 @@ const store: Store<State> = createStore<State>({
         ) {
             commit("SET_LOADING", true);
             try {
-                const [agents, contacts] = await Promise.all([
+                const [appointments, agents, contacts] = await Promise.all([
+                    appointmentService.getAll(),
                     agentService.getAll(),
                     contactService.getAll(),
                 ]);
 
-                const result = await appointmentService.getPaginated({
-                    page: 1,
-                    pageSize: 1000,
-                    status: filters.status || "all",
-                    startDate: filters.startDate || undefined,
-                    endDate: filters.endDate || undefined,
-                });
-
-                commit("SET_APPOINTMENTS", result.appointments);
+                commit("SET_APPOINTMENTS", appointments);
                 commit("SET_AGENTS", agents);
                 commit("SET_CONTACTS", contacts);
                 commit("SET_CURRENT_PAGE", filters.page || 1);
 
-                return result;
+                return {
+                    appointments,
+                    totalPages: 1,
+                    currentPage: filters.page || 1,
+                    hasMore: false,
+                    totalCount: appointments.length
+                };
             } catch (error) {
                 console.error("Failed to fetch paginated data:", error);
                 commit("SET_ERROR", "Failed to fetch data");
@@ -257,7 +232,6 @@ const store: Store<State> = createStore<State>({
             { commit }: ActionContext<State, State>,
             appointment: Partial<Appointment>,
         ) {
-            commit("SET_LOADING", true);
             try {
                 const newAppointment = await appointmentService.create(
                     appointment,
@@ -269,8 +243,6 @@ const store: Store<State> = createStore<State>({
             } catch (error) {
                 commit("SET_ERROR", "Failed to create appointment");
                 return null;
-            } finally {
-                commit("SET_LOADING", false);
             }
         },
 
@@ -281,7 +253,6 @@ const store: Store<State> = createStore<State>({
                 appointment: Partial<Appointment>;
             },
         ) {
-            commit("SET_LOADING", true);
             try {
                 const updatedAppointment = await appointmentService.update(
                     id,
@@ -294,8 +265,6 @@ const store: Store<State> = createStore<State>({
             } catch (error) {
                 commit("SET_ERROR", "Failed to update appointment");
                 return null;
-            } finally {
-                commit("SET_LOADING", false);
             }
         },
 

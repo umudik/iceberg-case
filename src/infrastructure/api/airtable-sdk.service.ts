@@ -168,7 +168,7 @@ export class AirtableSDKService {
                 .select({
                     ...(filterFormula && { filterByFormula: filterFormula }),
                     sort,
-                    pageSize: 100, // Get records in batches
+                    pageSize: 100, 
                 })
                 .eachPage((records, fetchNextPage) => {
                     allRecords.push(...records);

@@ -20,17 +20,6 @@ export class ContactService extends IContactService {
         return contact || null;
     }
 
-    async create(contact: Partial<Contact>): Promise<Contact> {
-        throw new Error("Not implemented");
-    }
-
-    async update(id: string, contact: Partial<Contact>): Promise<Contact> {
-        throw new Error("Not implemented");
-    }
-
-    async delete(id: string): Promise<boolean> {
-        return false;
-    }
 
     async search(query: string): Promise<Contact[]> {
         const contacts = await this.airtableService.getContacts();

@@ -20,15 +20,4 @@ export class AgentService extends IAgentService {
         return agent || null;
     }
 
-    async create(agent: Partial<Agent>): Promise<Agent> {
-        throw new Error("Not implemented");
-    }
-
-    async update(id: string, agent: Partial<Agent>): Promise<Agent> {
-        throw new Error("Not implemented");
-    }
-
-    async delete(id: string): Promise<boolean> {
-        return false;
-    }
 }

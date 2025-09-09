@@ -166,12 +166,11 @@ const paginatedAppointments = computed(
 );
 
 const totalPages = computed(() => store.getters.totalPages);
-const totalCount = computed(() => store.state.totalCount || 0);
+const totalCount = computed(() => store.getters.totalCount);
 
 const updateStatus = (status: State["filters"]["status"]) => {
   statusFilter.value = status;
   store.commit("SET_FILTER_STATUS", status);
-  fetchFilteredData();
 };
 
 const toggleAgent = (agentId: string) => {
@@ -183,25 +182,16 @@ const toggleAgent = (agentId: string) => {
     selectedAgentsFilter.value = [...current, agentId];
   }
   store.commit("TOGGLE_AGENT_FILTER", agentId);
-  fetchFilteredData();
 };
 
 const updateSearch = (query: string) => {
   searchFilter.value = query;
   store.commit("SET_SEARCH_QUERY", query);
-
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    fetchFilteredData();
-  }, 500);
 };
-
-let searchTimeout: any;
 
 const updateDateRange = (range: { start: Date | null; end: Date | null }) => {
   dateRangeFilter.value = range;
   store.commit("SET_DATE_RANGE", range);
-  fetchFilteredData();
 };
 
 const updatePage = (page: number) => {
@@ -242,25 +232,12 @@ const showSnackbar = (message: string, color: string) => {
   snackbar.value = { show: true, message, color };
 };
 
-const fetchFilteredData = async () => {
-  await store.dispatch("fetchPaginatedAppointments", {
-    page: currentPage.value,
-    status: statusFilter.value,
-    startDate: dateRangeFilter.value.start,
-    endDate: dateRangeFilter.value.end,
-    searchQuery: searchFilter.value,
-  });
+const fetchInitialData = async () => {
+  await store.dispatch("fetchAllData");
 };
 
 onMounted(async () => {
   try {
-    const [agents, contacts] = await Promise.all([
-      agentService.getAll(),
-      contactService.getAll(),
-    ]);
-    store.commit("SET_AGENTS", agents);
-    store.commit("SET_CONTACTS", contacts);
-
     if (route.query.status) {
       store.commit("SET_FILTER_STATUS", route.query.status);
     }
@@ -291,18 +268,11 @@ onMounted(async () => {
       store.commit("SET_CURRENT_PAGE", Number(route.query.page));
     }
 
-    await fetchFilteredData();
+    await fetchInitialData();
   } catch (error) {
     console.error("Failed to load initial data:", error);
     showSnackbar("Failed to load appointments", "error");
   }
 });
 
-watch(
-  () => route.query,
-  async () => {
-    await fetchFilteredData();
-  },
-  { deep: true }
-);
 </script>

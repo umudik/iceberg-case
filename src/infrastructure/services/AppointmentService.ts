@@ -1,7 +1,7 @@
 import { IAppointmentService } from "../../domain/services/IAppointmentService";
 import type { Appointment } from "../../domain/models/Appointment";
-import type { DateRange } from "../../domain/value-objects/DateRange";
 import { AirtableSDKService } from "../api/airtable-sdk.service";
+import store from "../../store";
 
 export class AppointmentService extends IAppointmentService {
     private airtableService: AirtableSDKService;
@@ -15,23 +15,10 @@ export class AppointmentService extends IAppointmentService {
         return this.airtableService.getAllAppointments();
     }
 
-    async getPaginated(options?: {
-        pageSize?: number;
-        page?: number;
-        status?: string;
-        startDate?: Date;
-        endDate?: Date;
-        searchQuery?: string;
-        agentIds?: string[];
-        sort?: { field: string; direction: "asc" | "desc" }[];
-    }) {
-        return this.airtableService.getAppointments(options);
-    }
 
     async getById(id: string): Promise<Appointment | null> {
-        const appointments = await this.airtableService.getAllAppointments();
-        const appointment = appointments.find((a) => a.id === id);
-        return appointment || null;
+        const appointments = store.state.appointments;
+        return appointments.find((a) => a.id === id) || null;
     }
 
     async create(appointment: Partial<Appointment>): Promise<Appointment> {
@@ -58,26 +45,8 @@ export class AppointmentService extends IAppointmentService {
         return result;
     }
 
-    async delete(id: string): Promise<boolean> {
-        return false;
-    }
-
     async getByContactId(contactId: string): Promise<Appointment[]> {
-        const appointments = await this.airtableService.getAllAppointments();
+        const appointments = store.state.appointments;
         return appointments.filter((a) => a.contact?.id === contactId);
-    }
-
-    async getByAgentId(agentId: string): Promise<Appointment[]> {
-        const appointments = await this.airtableService.getAllAppointments();
-        return appointments.filter((a) =>
-            a.agents.some((agent) => agent.id === agentId)
-        );
-    }
-
-    async getByDateRange(dateRange: DateRange): Promise<Appointment[]> {
-        const appointments = await this.airtableService.getAllAppointments();
-        return appointments.filter((a) =>
-            dateRange.contains(a.appointmentDate)
-        );
     }
 }
